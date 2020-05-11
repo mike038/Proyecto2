@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
 #include "..\Type\Type.h"
 #include "..\Definiciones\Definiciones.h"
 #include "..\SimpleList\SimpleList.h"
@@ -16,42 +18,47 @@
 #define M 1000
 
 struct stNode {
+	int num;
 	Type data;
-	char *key;
+	struct stNode *next;
 };
 
 typedef struct stNode *Node;
 
 struct stHashTable {
-	simpleList hs;
+	simpleList table[M];
 	int size;
 	int places;
 };
 
 hashTable hashTable_create(int places) {
-	hashTable ht = malloc(sizeof(struct stHashTable));
-	if (ht == NULL)
+	hashTable hs = malloc(sizeof(struct stHashTable));
+	if (hs == NULL)
 		return NULL;
-	ht.places = places;
-	ht.size = 0;
-	ht.hs = NULL;
-	return ht;
+
+	hs->places = places;
+	hs->size = 0;
+	for (int i = 0; i < 1001; ++i) {
+		hs->table[i] = NULL;
+	}
+
+	return hs;
 }
 
 int alphaToNumer(char c) {
 	return (int) c - 65;
 }
 
-int hash(char *key, hashTable hs) {
+int hash(char *key) {
 	int h = alphaToNumer(*key);
 	int x = 26;
 
 	for (int i = 0; i < strlen(key); ++i)
-		h = (h * x) % M + (alphaToNumer(*key[i])) % M;
+		h = (h * x) % M + (alphaToNumer(key[i])) % M;
 	return h % M;
 }
 
-char* toUpper(char *s) {
+char* mayus(char *s) {
 	char *sUpper = malloc(100);
 	int i = 0;
 	char letra;
@@ -71,13 +78,54 @@ char* toUpper(char *s) {
 }
 
 int hashTable_size(hashTable hs) {
-	return hs.size;
+	return hs->size;
 }
-int hashTable_places(hashTable hs){
-	return hs.places;
-}
-bool hashTable_add(hashTable hs, char *key, Type data);
-Type hashTable_get(hashTable hs, char *key);
-bool hashTable_remove(hashTable hs, char *key);
-bool hashTable_destroy(hashTable hs);
 
+int hashTable_places(hashTable hs) {
+	return hs->places;
+}
+
+bool hashTable_add(hashTable hs, char *key, Type data){
+	int clave = hash(key);
+	if(hs->table[clave] == NULL){
+		hs->table[clave] = simpleList_create();
+		simpleList_add(hs->table[clave], key, data);
+		hs->size++;
+	} else {
+		simpleList_add(hs->table[clave], key, data);
+		hs->size++;
+	}
+	return true;
+}
+
+Type hashTable_get(hashTable hs, char *key){
+	int clave = hash(key);
+	return simpleList_get(hs->table[clave], key);
+}
+
+void hashTable_print(hashTable hs){
+	for (int i = 0; i < 1000; ++i) {
+		if(hs->table[i] != NULL){
+			simpleList_print(hs->table[i]);
+		}
+	}
+}
+
+bool hashTable_remove(hashTable hs, char *key){
+	int clave = hash(key);
+	if(simpleList_size(hs->table[clave]) == 1)
+		simpleList_destroy(hs->table[clave]);
+	else
+		simpleList_remove(hs->table[clave], key);
+	hs->size--;
+	return true;
+}
+
+bool hashTable_destroy(hashTable hs){
+	//TODO cambiar 1001
+	for (int i = 0; i < 1001; ++i) {
+		simpleList_destroy(hs->table[i]);
+	}
+	//TODO eliminar lista completa
+	return true;
+}
