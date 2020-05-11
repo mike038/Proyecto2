@@ -38,7 +38,7 @@ int simpleList_size(simpleList s) {
 	return s->size;
 }
 
-int simpleList_isEmpty(simpleList s) {
+bool simpleList_isEmpty(simpleList s) {
 	return s->size == 0;
 }
 
@@ -52,8 +52,17 @@ bool simpleList_add(simpleList s, char *key, Type t) {
 		s->start = newNode;
 	else {
 		Node temp = s->start;
-		for (int i = 0; i < s->size; ++i) {
-			temp = temp->next;
+		if (s->size > 1) {
+			for (int i = 0; i < s->size; ++i) {
+				if (temp->next == NULL) {
+					temp->next = newNode;
+					s->size++;
+					return true;
+				} else
+					temp = temp->next;
+			}
+		} else {
+			s->start->next = newNode;
 		}
 		temp->next = newNode;
 	}
@@ -62,37 +71,60 @@ bool simpleList_add(simpleList s, char *key, Type t) {
 	return true;
 }
 
-//No se validan entradas, siempre se regresara un dato
 Type simpleList_get(simpleList s, char *key) {
 	Node temp = s->start;
 	for (int i = 0; i < s->size; ++i) {
 		if (strcmp(temp->key, key) == 0)
 			return temp->data;
-		else{
+		else {
 			temp = temp->next;
 		}
 	}
 	return temp->data;
 }
-//No se eliminan realmente, se pone un dato que tomamos como borrado
-bool simpleList_remove(simpleList s, char* key) {
+
+void simpleList_print(simpleList s) {
 	Node temp = s->start;
 	for (int i = 0; i < s->size; ++i) {
-		if(strcmp(temp->key, key)){
-			temp->key = "0000";
+		print_type(temp->data);
+		if (temp->next != NULL)
+			temp = temp->next;
+	}
+}
+
+bool simpleList_remove(simpleList s, char *key) {
+
+	if (strcmp(s->start->key, key) == 0) {
+		destroy_type(s->start->data);
+		free(s->start->key);
+		s->size--;
+		return true;
+	}
+
+	Node temp = s->start->next;
+	Node temp2 = s->start;
+
+	for (int i = 0; i < s->size; ++i) {
+		if (strcmp(temp->key, key)) {
+			destroy_type(temp->data);
+			free(temp->key);
+			temp2->next = temp->next;
+			s->size--;
 			return true;
 		}
+		temp = temp->next;
+		temp2 = temp2->next;
 	}
 	return false;
 }
 
 void simpleList_destroy(simpleList s) {
-	while(simpleList_isEmpty(s)){
+	while (s->size > 0) {
 		Node temp = s->start;
 		for (int i = 0; i < s->size; ++i) {
-			temp = temp->next;
-			if(temp->next == NULL)
-				free(temp);
+			if (temp->next == NULL)
+				simpleList_remove(s, temp->key);
+			s->size--;
 		}
 	}
 }
